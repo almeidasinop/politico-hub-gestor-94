@@ -66,7 +66,7 @@ const Despesas = () => {
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const { toast } = useToast();
 
   const categorias = ['Transporte', 'Material', 'Alimentação', 'Viagem', 'Comunicação', 'Consultoria'];
@@ -107,9 +107,9 @@ const Despesas = () => {
     });
   };
 
-  const despesasFiltradas = filtroCategoria 
-    ? despesas.filter(d => d.categoria === filtroCategoria)
-    : despesas;
+  const despesasFiltradas = filtroCategoria === 'todas' 
+    ? despesas 
+    : despesas.filter(d => d.categoria === filtroCategoria);
 
   const totalGeral = despesas.reduce((sum, despesa) => sum + despesa.valor, 0);
   const totalMes = despesas
@@ -280,14 +280,14 @@ const Despesas = () => {
                 <SelectValue placeholder="Todas as categorias" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as categorias</SelectItem>
+                <SelectItem value="todas">Todas as categorias</SelectItem>
                 {categorias.map(categoria => (
                   <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {filtroCategoria && (
-              <Button variant="outline" onClick={() => setFiltroCategoria('')}>
+            {filtroCategoria !== 'todas' && (
+              <Button variant="outline" onClick={() => setFiltroCategoria('todas')}>
                 Limpar Filtro
               </Button>
             )}
@@ -325,7 +325,7 @@ const Despesas = () => {
         <CardHeader>
           <CardTitle>Histórico de Despesas</CardTitle>
           <CardDescription>
-            {filtroCategoria ? `Categoria: ${filtroCategoria}` : 'Todas as despesas'}
+            {filtroCategoria !== 'todas' ? `Categoria: ${filtroCategoria}` : 'Todas as despesas'}
           </CardDescription>
         </CardHeader>
         <CardContent>

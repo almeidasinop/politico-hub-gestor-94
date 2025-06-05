@@ -61,7 +61,7 @@ const Materias = () => {
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -118,7 +118,7 @@ const Materias = () => {
   };
 
   const materiasFiltradas = materias.filter(materia => {
-    const matchesStatus = filtroStatus === '' || materia.status === filtroStatus;
+    const matchesStatus = filtroStatus === 'todos' || materia.status === filtroStatus;
     const matchesSearch = materia.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          materia.descricao.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
@@ -312,17 +312,17 @@ const Materias = () => {
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="todos">Todos os status</SelectItem>
                 <SelectItem value="Aguardando">Aguardando</SelectItem>
                 <SelectItem value="Aprovado">Aprovado</SelectItem>
                 <SelectItem value="Rejeitado">Rejeitado</SelectItem>
               </SelectContent>
             </Select>
-            {(filtroStatus || searchTerm) && (
+            {(filtroStatus !== 'todos' || searchTerm) && (
               <Button 
                 variant="outline" 
                 onClick={() => {
-                  setFiltroStatus('');
+                  setFiltroStatus('todos');
                   setSearchTerm('');
                 }}
               >
@@ -392,7 +392,7 @@ const Materias = () => {
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-muted-foreground">
-              {filtroStatus || searchTerm 
+              {filtroStatus !== 'todos' || searchTerm 
                 ? 'Nenhuma matéria encontrada com os filtros aplicados.' 
                 : 'Nenhuma matéria cadastrada.'}
             </p>
