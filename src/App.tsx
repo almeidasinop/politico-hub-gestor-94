@@ -39,7 +39,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SidebarProvider collapsedWidth={56}>
+          <SidebarProvider>
             <div className="min-h-screen flex w-full bg-gray-50">
               <AppSidebar onLogout={handleLogout} />
               

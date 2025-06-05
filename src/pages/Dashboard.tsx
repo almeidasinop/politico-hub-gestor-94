@@ -16,9 +16,9 @@ const Dashboard = () => {
 
   const recentActivities = [
     { type: 'contato', description: 'João Silva adicionado aos contatos', time: '2h atrás' },
-    { type: 'despesa', description: 'Despesa de combustível lançada: R$ 120,00', time: '4h atrás' },
-    { type: 'agenda', description: 'Reunião com equipe agendada para amanhã', time: '6h atrás' },
-    { type: 'materia', description: 'PL 123/2025 teve status alterado para Aprovado', time: '1d atrás' }
+    { type: 'agenda', description: 'Reunião com equipe agendada para amanhã', time: '4h atrás' },
+    { type: 'materia', description: 'PL 123/2025 teve status alterado para Aprovado', time: '6h atrás' },
+    { type: 'contato', description: 'Maria Santos atualizada nos contatos', time: '1d atrás' }
   ];
 
   const todayBirthdays = [

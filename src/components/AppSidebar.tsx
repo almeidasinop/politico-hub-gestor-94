@@ -30,7 +30,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ onLogout }: AppSidebarProps) {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -39,7 +40,7 @@ export function AppSidebar({ onLogout }: AppSidebarProps) {
     isActive ? "bg-political-blue text-white" : "hover:bg-muted/50";
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible>
+    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarTrigger className="m-2 self-end" />
 
       <SidebarContent className="bg-white border-r">
