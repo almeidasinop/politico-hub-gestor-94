@@ -1,36 +1,42 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from '@/hooks/use-auth';
 
-interface LoginProps {
-  onLogin: () => void;
-}
+const Login = () => {
+  const { signIn, signUp, isAuthenticating } = useAuth();
+  
+  // Estados para o formulário de login
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
-const Login = ({ onLogin }: LoginProps) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const { toast } = useToast();
+  // Estados para o formulário de registo
+  const [registerGabinete, setRegisterGabinete] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+
+  const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (username === 'admin' && password === 'admin123') {
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao sistema de gestão política.",
-      });
-      onLogin();
-    } else {
-      toast({
-        title: "Erro no login",
-        description: "Usuário ou senha incorretos.",
-        variant: "destructive",
-      });
+    signIn(loginEmail, loginPassword);
+  };
+
+  const handleSignUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerGabinete || !registerName || !registerEmail || !registerPassword) {
+      // Idealmente, usar um toast para notificar o utilizador
+      return;
     }
+    signUp({
+      gabineteName: registerGabinete,
+      userName: registerName,
+      email: registerEmail,
+      password: registerPassword
+    });
   };
 
   return (
@@ -41,40 +47,58 @@ const Login = ({ onLogin }: LoginProps) => {
             Sistema de Gestão Política
           </CardTitle>
           <CardDescription className="text-center">
-            Faça login para acessar o sistema
+            Acesse seu gabinete ou registre um novo
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Digite seu usuário"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full bg-political-blue hover:bg-political-navy">
-              Entrar
-            </Button>
-          </form>
-          <div className="mt-4 text-sm text-center text-muted-foreground">
-            <p>Usuário: admin | Senha: admin123</p>
-          </div>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="register">Registrar</TabsTrigger>
+            </TabsList>
+
+            {/* Aba de Login */}
+            <TabsContent value="login">
+              <form onSubmit={handleSignIn} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input id="login-email" type="email" placeholder="seu@email.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Senha</Label>
+                  <Input id="login-password" type="password" placeholder="Sua senha" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full bg-political-blue hover:bg-political-navy" disabled={isAuthenticating}>
+                  {isAuthenticating ? 'A entrar...' : 'Entrar'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Aba de Registo */}
+            <TabsContent value="register">
+              <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-gabinete">Nome do Gabinete</Label>
+                  <Input id="register-gabinete" type="text" placeholder="Ex: Gabinete Vereador João" value={registerGabinete} onChange={(e) => setRegisterGabinete(e.target.value)} required />
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="register-name">Seu Nome Completo</Label>
+                  <Input id="register-name" type="text" placeholder="Seu nome" value={registerName} onChange={(e) => setRegisterName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">Seu Email</Label>
+                  <Input id="register-email" type="email" placeholder="seu.melhor@email.com" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Crie uma Senha</Label>
+                  <Input id="register-password" type="password" placeholder="Mínimo 6 caracteres" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full bg-political-blue hover:bg-political-navy" disabled={isAuthenticating}>
+                   {isAuthenticating ? 'A registar...' : 'Registrar Novo Gabinete'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

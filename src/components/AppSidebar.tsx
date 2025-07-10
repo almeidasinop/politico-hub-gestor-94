@@ -1,7 +1,7 @@
-
-import { useState } from "react";
-import { Calendar, User, FileText, List, Mail, LogOut } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Calendar, User, FileText, List, Mail, LogOut, MapPin, Settings } from "lucide-react"; // Adicionado Settings
+import { NavLink } from "react-router-dom";
+import { cn } from "@/lib/utils"; 
+import { useAuth } from "@/hooks/use-auth"; // Importar useAuth para verificar a função
 
 import {
   Sidebar,
@@ -19,25 +19,22 @@ import {
 const menuItems = [
   { title: "Inicio", url: "/", icon: List },
   { title: "Contatos", url: "/contatos", icon: User },
+  { title: "Visitas", url: "/visitas", icon: MapPin },
   { title: "Aniversariantes", url: "/aniversariantes", icon: Calendar },
   { title: "Despesas", url: "/despesas", icon: FileText },
   { title: "Agenda", url: "/agenda", icon: Calendar },
   { title: "Matérias", url: "/materias", icon: FileText },
 ];
 
-interface AppSidebarProps {
-  onLogout: () => void;
-}
+const adminMenuItems = [
+    { title: "Configurações", url: "/configuracoes", icon: Settings }
+];
 
-export function AppSidebar({ onLogout }: AppSidebarProps) {
+
+export function AppSidebar({ onLogout }: { onLogout: () => void; }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
-  const currentPath = location.pathname;
-
-  const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-political-blue text-white" : "hover:bg-muted/50";
+  const { userProfile } = useAuth(); // Obter o perfil do utilizador
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
@@ -57,8 +54,8 @@ export function AppSidebar({ onLogout }: AppSidebarProps) {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="mr-2 h-4 w-4" />
+                    <NavLink to={item.url} end className={({ isActive }) => cn("w-full justify-start text-slate-600", isActive ? "bg-political-blue hover:bg-political-blue/90" : "hover:bg-muted/50 hover:text-slate-800")}>
+                      <item.icon className="h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -67,10 +64,32 @@ export function AppSidebar({ onLogout }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        
+        {/* Menu de Administração - visível apenas para admins */}
+        {userProfile?.role === 'admin' && (
+             <SidebarGroup>
+                <SidebarGroupLabel className="text-political-gray">Administração</SidebarGroupLabel>
+                <SidebarGroupContent>
+                    <SidebarMenu>
+                    {adminMenuItems.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                            <NavLink to={item.url} end className={({ isActive }) => cn("w-full justify-start text-slate-600", isActive ? "bg-political-blue hover:bg-political-blue/90" : "hover:bg-muted/50 hover:text-slate-800")}>
+                            <item.icon className="h-4 w-4" />
+                            {!collapsed && <span>{item.title}</span>}
+                            </NavLink>
+                        </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenu>
+                </SidebarGroupContent>
+            </SidebarGroup>
+        )}
+
 
         <div className="mt-auto p-4 border-t">
-          <SidebarMenuButton onClick={onLogout} className="w-full text-red-600 hover:bg-red-50">
-            <LogOut className="mr-2 h-4 w-4" />
+          <SidebarMenuButton onClick={onLogout} className="w-full text-red-600 hover:bg-red-50 justify-start">
+            <LogOut className="h-4 w-4" />
             {!collapsed && <span>Sair</span>}
           </SidebarMenuButton>
         </div>
