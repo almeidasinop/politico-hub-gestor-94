@@ -1,73 +1,135 @@
-# Welcome to your Lovable project
+Político Hub Gestor
+Um sistema de gestão de contatos e demandas para gabinetes e mandatos políticos, projetado para otimizar a organização, o atendimento ao cidadão e a comunicação da equipe.
 
-## Project info
+📑 Índice
+Sobre o Projeto
 
-**URL**: https://lovable.dev/projects/e9056c6a-2a1b-4930-bfdb-d61556f89b33
+✨ Funcionalidades
 
-## How can I edit this code?
+🚀 Tecnologias Utilizadas
 
-There are several ways of editing your application.
+🏁 Como Começar
 
-**Use Lovable**
+Pré-requisitos
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e9056c6a-2a1b-4930-bfdb-d61556f89b33) and start prompting.
+Instalação
 
-Changes made via Lovable will be committed automatically to this repo.
+🔧 Configuração
 
-**Use your preferred IDE**
+🤝 Contribuições
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+📄 Licença
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+📖 Sobre o Projeto
+O Político Hub Gestor nasceu da necessidade de centralizar e gerenciar as diversas interações e demandas que um mandato político recebe diariamente. A plataforma atua como um CRM (Customer Relationship Management) focado no setor público, permitindo que a equipe do gabinete cadastre eleitores, registre solicitações, acompanhe o andamento de cada demanda e mantenha um histórico completo de interações.
 
-Follow these steps:
+O objetivo principal é aumentar a eficiência da equipe, melhorar a qualidade do atendimento ao cidadão e fornecer dados para uma tomada de decisão mais estratégica.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+✨ Funcionalidades
+Gestão de Contatos: Cadastro completo de eleitores e lideranças, com informações de contato, endereço e observações.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Registro de Demandas: Sistema para registrar as solicitações dos cidadãos, classificando-as por tipo e prioridade.
 
-# Step 3: Install the necessary dependencies.
-npm i
+Acompanhamento de Status: Monitore o progresso de cada demanda, desde o recebimento até a sua conclusão.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Controle de Usuários: Gerenciamento de membros da equipe com diferentes níveis de acesso.
 
-**Edit a file directly in GitHub**
+Dashboard Intuitivo: (Futura implementação) Painel com gráficos e indicadores chave sobre os atendimentos.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Busca Avançada: Encontre rapidamente contatos ou demandas utilizando filtros.
 
-**Use GitHub Codespaces**
+🚀 Tecnologias Utilizadas
+O projeto foi construído utilizando as seguintes tecnologias:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Backend: PHP
 
-## What technologies are used for this project?
+Frontend: HTML, CSS, JavaScript
 
-This project is built with:
+Banco de Dados: MySQL
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Dependências PHP (via Composer):
 
-## How can I deploy this project?
+coffeecode/router: Para o gerenciamento de rotas da aplicação.
 
-Simply open [Lovable](https://lovable.dev/projects/e9056c6a-2a1b-4930-bfdb-d61556f89b33) and click on Share -> Publish.
+Estilização: Framework Bootstrap (utilizado em algumas partes)
 
-## Can I connect a custom domain to my Lovable project?
+🏁 Como Começar
+Siga estas instruções para obter uma cópia do projeto e executá-lo em sua máquina local para desenvolvimento e testes.
 
-Yes, you can!
+Pré-requisitos
+Você precisará ter um ambiente de desenvolvimento PHP/MySQL configurado. Recomendamos o uso de ferramentas como:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+XAMPP
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+WampServer
+
+Laragon
+
+Docker
+
+E também o Composer para gerenciar as dependências do PHP.
+
+Instalação
+Clone o repositório:
+
+git clone https://github.com/almeidasinop/politico-hub-gestor-94.git
+
+Acesse o diretório do projeto:
+
+cd politico-hub-gestor-94
+
+Instale as dependências do PHP:
+
+composer install
+
+Configure o Banco de Dados:
+
+Crie um novo banco de dados no seu servidor MySQL (ex: politico_hub).
+
+Importe o arquivo .sql que está na pasta _docs do projeto para criar as tabelas e estruturas necessárias.
+
+Configure as variáveis de ambiente:
+
+O projeto parece utilizar um arquivo de configuração para a conexão com o banco de dados. Localize o arquivo de configuração (provavelmente em source/Config.php ou similar) e atualize com as suas credenciais do banco de dados (host, nome do banco, usuário e senha).
+
+Inicie o servidor:
+
+Aponte o seu servidor web (Apache, Nginx) para a pasta raiz do projeto.
+
+Acesse o projeto pelo seu navegador (ex: http://localhost/politico-hub-gestor-94).
+
+🔧 Configuração
+O principal arquivo de configuração a ser ajustado é o que contém os dados de conexão com o banco de dados.
+
+Exemplo (em source/Config.php ou similar):
+
+define("DATA_LAYER_CONFIG", [
+    "driver" => "mysql",
+    "host" => "localhost", // ou o host do seu BD
+    "port" => "3306",
+    "dbname" => "seu_banco_de_dados", // altere aqui
+    "username" => "seu_usuario", // altere aqui
+    "passwd" => "sua_senha", // altere aqui
+    "options" => [
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8",
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+        PDO::ATTR_CASE => PDO::CASE_NATURAL
+    ]
+]);
+
+🤝 Contribuições
+Contribuições são o que tornam a comunidade de código aberto um lugar incrível para aprender, inspirar e criar. Qualquer contribuição que você fizer será muito apreciada.
+
+Faça um Fork do projeto
+
+Crie uma Branch para sua Feature (git checkout -b feature/AmazingFeature)
+
+Faça o Commit de suas mudanças (git commit -m 'Add some AmazingFeature')
+
+Faça o Push para a Branch (git push origin feature/AmazingFeature)
+
+Abra um Pull Request
+
+📄 Licença
+Este projeto não possui uma licença definida. Recomenda-se adicionar um arquivo LICENSE para informar aos outros desenvolvedores como eles podem utilizar, modificar e distribuir o código.
