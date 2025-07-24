@@ -29,7 +29,7 @@ const Configuracoes = () => {
       <Card className="bg-red-50 border-red-200 text-red-800">
         <CardContent className="text-center py-8 flex items-center justify-center gap-2">
           <AlertCircle className="h-5 w-5" />
-          <p>Ocorreu um erro ao carregar os dados da equipa.</p>
+          <p>Ocorreu um erro ao carregar os dados da equipe.</p>
         </CardContent>
       </Card>
     );
@@ -39,12 +39,12 @@ const Configuracoes = () => {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold text-political-navy">Configurações do Gabinete</h1>
-        <p className="text-muted-foreground">Gerencie a sua equipa e as configurações do sistema.</p>
+        <p className="text-muted-foreground">Gerencie a sua equipe e as configurações do sistema.</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Equipa do Gabinete</CardTitle>
+          <CardTitle>Equipe do Gabinete</CardTitle>
           <CardDescription>Utilizadores com acesso a este gabinete.</CardDescription>
         </CardHeader>
         <CardContent>

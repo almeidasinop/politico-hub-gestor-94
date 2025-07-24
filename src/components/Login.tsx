@@ -44,7 +44,7 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center text-political-navy">
-            Sistema de Gestão Política
+            Sistema de Gestão de Gabinete
           </CardTitle>
           <CardDescription className="text-center">
             Acesse seu gabinete ou registre um novo

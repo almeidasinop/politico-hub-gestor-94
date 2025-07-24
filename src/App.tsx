@@ -13,28 +13,55 @@ import Despesas from "./pages/Despesas";
 import Agenda from "./pages/Agenda";
 import Materias from "./pages/Materias";
 import Visitas from "./pages/Visitas";
-import Configuracoes from "./pages/Configuracoes"; // Adicionado
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import { AuthProvider, useAuth } from './hooks/use-auth';
 import { firebaseInitialized } from "./lib/firebase";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isAuthenticated, isLoading, logOut } = useAuth();
+  const { isAuthenticated, isLoading, logOut, userProfile } = useAuth();
 
   if (!firebaseInitialized) {
-    return <div className="min-h-screen flex flex-col items-center justify-center text-center p-4 bg-red-50 text-red-800"><h1 className="text-2xl font-bold mb-4">Erro Crítico de Configuração</h1><p>Não foi possível ligar à base de dados. Verifique o seu ficheiro `.env` e as regras do Firebase.</p></div>;
+    return <div className="min-h-screen flex flex-col items-center justify-center text-center p-4 bg-red-50 text-red-800"><h1 className="text-2xl font-bold mb-4">Erro Crítico de Configuração</h1><p>Não foi possível conectar à base de dados. Verifique seu arquivo `.env` e as regras do Firebase.</p></div>;
   }
-  
+
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">A carregar sessão...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Carregando sessão...</div>;
   }
 
   if (!isAuthenticated) {
     return <Login />;
   }
 
+  // CORREÇÃO: Layout exclusivo para o Super Administrador
+  if (userProfile?.role === 'superadmin') {
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-gray-100">
+        <header className="h-16 flex items-center justify-between border-b bg-white px-6 shadow-sm">
+          <div>
+            <h1 className="text-xl font-bold text-red-700">Painel do Super Administrador</h1>
+          </div>
+          <Button variant="ghost" onClick={logOut} className="text-slate-600 hover:bg-red-50 hover:text-red-600">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+        </header>
+        {/* Adicionado um container para centralizar o conteúdo */}
+        <main className="flex-1 p-6">
+          <div className="container mx-auto max-w-7xl">
+            <SuperAdminDashboard />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Layout padrão para usuários normais
   return (
     <BrowserRouter>
       <SidebarProvider>
@@ -43,20 +70,20 @@ const AppContent = () => {
           <div className="flex-1 flex flex-col">
             <header className="h-12 flex items-center border-b bg-white px-4">
               <SidebarTrigger className="mr-4" />
-              <div className="flex-1"><h2 className="text-sm font-medium text-political-navy">Sistema de Gestão Política</h2></div>
+              <div className="flex-1"><h2 className="text-sm font-medium text-political-navy">Sistema de Gestão de Gabinete</h2></div>
             </header>
             <main className="flex-1 p-6">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/contatos" element={<Contatos />} />
-                <Route path="/visitas" element={<Visitas />} />
-                <Route path="/aniversariantes" element={<Aniversariantes />} />
-                <Route path="/despesas" element={<Despesas />} />
-                <Route path="/agenda" element={<Agenda />} />
-                <Route path="/materias" element={<Materias />} />
-                <Route path="/configuracoes" element={<Configuracoes />} /> {/* Adicionado */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/contatos" element={<Contatos />} />
+                  <Route path="/visitas" element={<Visitas />} />
+                  <Route path="/aniversariantes" element={<Aniversariantes />} />
+                  <Route path="/despesas" element={<Despesas />} />
+                  <Route path="/agenda" element={<Agenda />} />
+                  <Route path="/materias" element={<Materias />} />
+                  <Route path="/configuracoes" element={<Configuracoes />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
             </main>
           </div>
         </div>

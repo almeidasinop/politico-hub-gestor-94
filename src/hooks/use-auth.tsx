@@ -16,7 +16,7 @@ interface UserProfile {
   name: string;
   email: string;
   gabineteId: string;
-  role: 'admin' | 'assessor';
+  role: 'admin' | 'assessor' | 'superadmin';
 }
 
 interface SignUpData {
