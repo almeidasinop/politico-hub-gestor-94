@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, User, FileText, List, MapPin, Activity as ActivityIcon } from 'lucide-react';
 import { useDashboardStats, type Activity } from '@/hooks/useDashboardStats';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Contato } from '@/hooks/use-contatos';
+import { useAuth } from '@/hooks/use-auth'; // Importar useAuth
+import { db } from '@/lib/firebase'; // Importar db
+import { doc, getDoc } from 'firebase/firestore'; // Importar getDoc
 
 // Função para retornar um ícone com base no tipo de atividade
 const getActivityIcon = (type: Activity['type']) => {
@@ -18,8 +21,34 @@ const getActivityIcon = (type: Activity['type']) => {
 };
 
 const Dashboard = () => {
-  const { stats, todayBirthdays, recentActivities, getCorCargo, formatarDataCompleta, isLoading } = useDashboardStats();
+  const { stats, todayBirthdays, recentActivities, getCorCargo, formatarDataCompleta, isLoading: isLoadingStats } = useDashboardStats();
+  const { userProfile } = useAuth();
+  const [gabineteNome, setGabineteNome] = useState('');
+  const [isGabineteLoading, setIsGabineteLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGabineteNome = async () => {
+      if (userProfile?.gabineteId) {
+        try {
+          const gabineteRef = doc(db, 'gabinetes', userProfile.gabineteId);
+          const gabineteSnap = await getDoc(gabineteRef);
+          if (gabineteSnap.exists()) {
+            setGabineteNome(gabineteSnap.data().nome);
+          }
+        } catch (error) {
+          console.error("Erro ao buscar nome do gabinete:", error);
+        }
+      }
+      setIsGabineteLoading(false);
+    };
+
+    if (userProfile) {
+        fetchGabineteNome();
+    }
+  }, [userProfile]);
   
+  const isLoading = isLoadingStats || isGabineteLoading;
+
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -39,9 +68,12 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Trecho de código modificado com a nova lógica */}
       <div>
         <h1 className="text-3xl font-bold text-political-navy">Início</h1>
-        <p className="text-muted-foreground">Visão geral do sistema de gestão de Gabinete</p>
+        <p className="text-muted-foreground">
+            Visão geral das atividades do gabinete <strong className="text-political-navy">{gabineteNome || 'não vinculado'}</strong>.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -96,11 +128,11 @@ const Dashboard = () => {
         <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-political-navy" />Status das Matérias</CardTitle><CardDescription>Resumo do status das matérias cadastradas</CardDescription></CardHeader>
         <CardContent>
            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-yellow-50 rounded-lg"><div className="text-2xl font-bold text-yellow-600">{stats.materiasAguardando}</div><div className="text-sm text-muted-foreground">Aguardando</div></div>
-              <div className="text-center p-4 bg-green-50 rounded-lg"><div className="text-2xl font-bold text-green-600">{stats.materiasAprovadas}</div><div className="text-sm text-muted-foreground">Aprovadas</div></div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg"><div className="text-2xl font-bold text-blue-600">{stats.materiasAtendidas}</div><div className="text-sm text-muted-foreground">Atendidas</div></div>
-              <div className="text-center p-4 bg-red-50 rounded-lg"><div className="text-2xl font-bold text-red-600">{stats.materiasRejeitadas}</div><div className="text-sm text-muted-foreground">Rejeitadas</div></div>
-            </div>
+             <div className="text-center p-4 bg-yellow-50 rounded-lg"><div className="text-2xl font-bold text-yellow-600">{stats.materiasAguardando}</div><div className="text-sm text-muted-foreground">Aguardando</div></div>
+             <div className="text-center p-4 bg-green-50 rounded-lg"><div className="text-2xl font-bold text-green-600">{stats.materiasAprovadas}</div><div className="text-sm text-muted-foreground">Aprovadas</div></div>
+             <div className="text-center p-4 bg-blue-50 rounded-lg"><div className="text-2xl font-bold text-blue-600">{stats.materiasAtendidas}</div><div className="text-sm text-muted-foreground">Atendidas</div></div>
+             <div className="text-center p-4 bg-red-50 rounded-lg"><div className="text-2xl font-bold text-red-600">{stats.materiasRejeitadas}</div><div className="text-sm text-muted-foreground">Rejeitadas</div></div>
+           </div>
         </CardContent>
       </Card>
     </div>

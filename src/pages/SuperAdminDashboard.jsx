@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, onSnapshot, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase'; // Importar auth
+import { initializeApp, deleteApp } from 'firebase/app'; // Importar funções de app
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'; // Importar função de criação de usuário
+import { collection, onSnapshot, addDoc, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Users, BarChart2, Loader2, PlusCircle, Edit, UserCog } from 'lucide-react';
+import { Building, Users, BarChart2, Loader2, PlusCircle, Edit, UserCog, UserPlus, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -142,12 +144,12 @@ const GabineteRow = ({ gabinete }) => {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div>
-                  <Label htmlFor="edit-vencimento">Vencimento</Label>
-                  <Input id="edit-vencimento" type="date" value={dadosEdicao.vencimento} onChange={(e) => setDadosEdicao({...dadosEdicao, vencimento: e.target.value})} />
+                  <Label htmlFor={`edit-vencimento-${gabinete.id}`}>Vencimento</Label>
+                  <Input id={`edit-vencimento-${gabinete.id}`} type="date" value={dadosEdicao.vencimento} onChange={(e) => setDadosEdicao({...dadosEdicao, vencimento: e.target.value})} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch id="edit-status" checked={dadosEdicao.ativo} onCheckedChange={(checked) => setDadosEdicao({...dadosEdicao, ativo: checked})} />
-                  <Label htmlFor="edit-status">{dadosEdicao.ativo ? "Ativo" : "Inativo"}</Label>
+                  <Switch id={`edit-status-${gabinete.id}`} checked={dadosEdicao.ativo} onCheckedChange={(checked) => setDadosEdicao({...dadosEdicao, ativo: checked})} />
+                  <Label htmlFor={`edit-status-${gabinete.id}`}>{dadosEdicao.ativo ? "Ativo" : "Inativo"}</Label>
                 </div>
               </div>
               <DialogFooter>
@@ -168,11 +170,38 @@ const GabineteRow = ({ gabinete }) => {
 
 // --- Componente para Gerenciar Usuários ---
 const GerenciarUsuarios = ({ usuarios, gabinetes, isLoading }) => {
+  const [filtroGabinete, setFiltroGabinete] = useState('all');
+
+  const usuariosFiltrados = useMemo(() => {
+    if (filtroGabinete === 'all') {
+      return usuarios;
+    }
+    if (filtroGabinete === 'none') {
+      return usuarios.filter(user => !user.gabineteId);
+    }
+    return usuarios.filter(user => user.gabineteId === filtroGabinete);
+  }, [usuarios, filtroGabinete]);
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Gerenciar Usuários</CardTitle>
-        <CardDescription>Visualize e administre todos os usuários do sistema.</CardDescription>
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <CardTitle>Gerenciar Usuários</CardTitle>
+          <CardDescription>Visualize e administre todos os usuários do sistema.</CardDescription>
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="w-full md:w-64">
+                <Select value={filtroGabinete} onValueChange={setFiltroGabinete}>
+                    <SelectTrigger><Filter className="mr-2 h-4 w-4" /><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os Gabinetes</SelectItem>
+                        <SelectItem value="none">Nenhum Gabinete</SelectItem>
+                        {gabinetes.map(g => <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <CreateUserDialog gabinetes={gabinetes} />
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -189,7 +218,7 @@ const GerenciarUsuarios = ({ usuarios, gabinetes, isLoading }) => {
             {isLoading ? (
               <TableRow><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
             ) : (
-              usuarios.map(user => <UsuarioRow key={user.id} user={user} gabinetes={gabinetes} />)
+              usuariosFiltrados.map(user => <UsuarioRow key={user.id} user={user} gabinetes={gabinetes} />)
             )}
           </TableBody>
         </Table>
@@ -198,15 +227,124 @@ const GerenciarUsuarios = ({ usuarios, gabinetes, isLoading }) => {
   );
 };
 
+// --- Diálogo de Criação de Usuário ---
+const CreateUserDialog = ({ gabinetes }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [formData, setFormData] = useState({ nome: '', email: '', senha: '', role: 'user', gabineteId: 'none' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    if (!formData.nome || !formData.email || !formData.senha || !formData.role) {
+      toast({ title: "Erro", description: "Preencha todos os campos obrigatórios.", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+
+    // CORREÇÃO: Cria uma instância temporária do Firebase para não deslogar o admin
+    const tempAppName = `temp-user-creation-${Date.now()}`;
+    const tempApp = initializeApp(auth.app.options, tempAppName);
+    const tempAuth = getAuth(tempApp);
+
+    try {
+      // 1. Cria o usuário no Firebase Auth usando a instância temporária
+      const userCredential = await createUserWithEmailAndPassword(tempAuth, formData.email, formData.senha);
+      const user = userCredential.user;
+
+      // 2. Cria o documento do usuário no Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        name: formData.nome,
+        email: formData.email,
+        role: formData.role,
+        gabineteId: formData.gabineteId === 'none' ? '' : formData.gabineteId,
+        createdAt: serverTimestamp()
+      });
+
+      toast({ title: "Sucesso!", description: "Usuário criado com sucesso." });
+      setIsOpen(false);
+      setFormData({ nome: '', email: '', senha: '', role: 'user', gabineteId: 'none' });
+    } catch (error) {
+      console.error("Erro ao criar usuário:", error);
+      const description = error.code === 'auth/email-already-in-use' 
+        ? "Este e-mail já está em uso."
+        : "Não foi possível criar o usuário.";
+      toast({ title: "Erro", description, variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+      // Limpa a instância temporária
+      await deleteApp(tempApp);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> Adicionar Usuário</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Criar Novo Usuário</DialogTitle>
+          <DialogDescription>Preencha os dados para criar um novo acesso ao sistema.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleCreateUser} className="space-y-4 py-4">
+          <div>
+            <Label htmlFor="create-nome">Nome</Label>
+            <Input id="create-nome" value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} />
+          </div>
+          <div>
+            <Label htmlFor="create-email">Email</Label>
+            <Input id="create-email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+          </div>
+          <div>
+            <Label htmlFor="create-senha">Senha</Label>
+            <Input id="create-senha" type="password" value={formData.senha} onChange={(e) => setFormData({...formData, senha: e.target.value})} />
+          </div>
+          <div>
+            <Label htmlFor="create-role">Função</Label>
+            <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
+              <SelectTrigger id="create-role"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">Usuário</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="superadmin">Super Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="create-gabinete">Vincular a Gabinete</Label>
+            <Select value={formData.gabineteId} onValueChange={(value) => setFormData({...formData, gabineteId: value})}>
+              <SelectTrigger id="create-gabinete"><SelectValue placeholder="Opcional..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {Array.isArray(gabinetes) && gabinetes.map(g => <SelectItem key={g.id} value={g.id}>{g.nome || 'Nome Inválido'}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" type="button" onClick={() => setIsOpen(false)}>Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Criar Usuário
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+
 const UsuarioRow = ({ user, gabinetes }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGabinete, setSelectedGabinete] = useState(user.gabineteId || '');
+  const [selectedGabinete, setSelectedGabinete] = useState(user.gabineteId || 'none');
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  // CORREÇÃO: Lógica para buscar o nome do gabinete movida para dentro e otimizada
   const gabineteName = useMemo(() => {
+    if (!Array.isArray(gabinetes)) return <span className="text-muted-foreground">Carregando...</span>;
     if (!user.gabineteId) return <span className="text-muted-foreground">Nenhum</span>;
+    
     const gabinete = gabinetes.find(g => g.id === user.gabineteId);
     return gabinete ? (gabinete.nome || 'Nome Inválido') : <span className="text-red-500">Gabinete Inválido</span>;
   }, [user.gabineteId, gabinetes]);
@@ -216,8 +354,9 @@ const UsuarioRow = ({ user, gabinetes }) => {
     setIsUpdating(true);
     const userRef = doc(db, "users", user.id);
     try {
+      const gabineteParaSalvar = selectedGabinete === 'none' ? '' : selectedGabinete;
       await updateDoc(userRef, {
-        gabineteId: selectedGabinete
+        gabineteId: gabineteParaSalvar
       });
       toast({ title: "Sucesso!", description: "Usuário atualizado." });
       setIsOpen(false);
@@ -232,7 +371,6 @@ const UsuarioRow = ({ user, gabinetes }) => {
   return (
     <>
       <TableRow>
-        {/* CORREÇÃO: Adicionado fallback para dados do usuário */}
         <TableCell className="font-medium">{user?.name || 'Sem nome'}</TableCell>
         <TableCell>{user?.email || 'Sem email'}</TableCell>
         <TableCell>{user?.role || 'Sem função'}</TableCell>
@@ -248,14 +386,14 @@ const UsuarioRow = ({ user, gabinetes }) => {
                 <DialogDescription>Vincule {user.name || 'este usuário'} a um gabinete.</DialogDescription>
               </DialogHeader>
               <div className="py-4">
-                <Label htmlFor="gabinete-select">Selecione o Gabinete</Label>
+                <Label htmlFor={`gabinete-select-${user.id}`}>Selecione o Gabinete</Label>
                 <Select value={selectedGabinete} onValueChange={setSelectedGabinete}>
-                  <SelectTrigger id="gabinete-select">
+                  <SelectTrigger id={`gabinete-select-${user.id}`}>
                     <SelectValue placeholder="Selecione um gabinete..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
-                    {gabinetes.map(g => <SelectItem key={g.id} value={g.id}>{g.nome || 'Nome Inválido'}</SelectItem>)}
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {Array.isArray(gabinetes) && gabinetes.map(g => <SelectItem key={g.id} value={g.id}>{g.nome || 'Nome Inválido'}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

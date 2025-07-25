@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,11 +18,43 @@ import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import { AuthProvider, useAuth } from './hooks/use-auth';
-import { firebaseInitialized } from "./lib/firebase";
+import { firebaseInitialized, db } from "./lib/firebase"; // Importar db
+import { doc, getDoc } from 'firebase/firestore'; // Importar getDoc
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 const queryClient = new QueryClient();
+
+// Componente de Cabeçalho Personalizado
+const AppHeader = () => {
+  const { userProfile } = useAuth();
+  const [gabineteNome, setGabineteNome] = useState('');
+
+  useEffect(() => {
+    const fetchGabineteNome = async () => {
+      if (userProfile?.gabineteId) {
+        const gabineteRef = doc(db, 'gabinetes', userProfile.gabineteId);
+        const gabineteSnap = await getDoc(gabineteRef);
+        if (gabineteSnap.exists()) {
+          setGabineteNome(gabineteSnap.data().nome);
+        }
+      }
+    };
+
+    fetchGabineteNome();
+  }, [userProfile]);
+
+  const nomeUsuario = userProfile?.name?.split(' ')[0] || '';
+
+  return (
+    <div className="flex-1">
+      <h2 className="text-sm font-medium text-political-navy">
+        {`Bem-vindo(a), ${nomeUsuario}`}
+        {gabineteNome && ` ao gabinete ${gabineteNome}`}
+      </h2>
+    </div>
+  );
+};
 
 const AppContent = () => {
   const { isAuthenticated, isLoading, logOut, userProfile } = useAuth();
@@ -38,7 +71,6 @@ const AppContent = () => {
     return <Login />;
   }
 
-  // CORREÇÃO: Layout exclusivo para o Super Administrador
   if (userProfile?.role === 'superadmin') {
     return (
       <div className="min-h-screen flex flex-col w-full bg-gray-100">
@@ -51,7 +83,6 @@ const AppContent = () => {
             Sair
           </Button>
         </header>
-        {/* Adicionado um container para centralizar o conteúdo */}
         <main className="flex-1 p-6">
           <div className="container mx-auto max-w-7xl">
             <SuperAdminDashboard />
@@ -70,7 +101,8 @@ const AppContent = () => {
           <div className="flex-1 flex flex-col">
             <header className="h-12 flex items-center border-b bg-white px-4">
               <SidebarTrigger className="mr-4" />
-              <div className="flex-1"><h2 className="text-sm font-medium text-political-navy">Sistema de Gestão de Gabinete</h2></div>
+              {/* Componente de cabeçalho com a mensagem personalizada */}
+              <AppHeader />
             </header>
             <main className="flex-1 p-6">
                 <Routes>
