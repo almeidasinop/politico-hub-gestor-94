@@ -1,41 +1,49 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, DocumentData } from 'firebase/firestore';
 import { useAuth } from './use-auth';
-import { useToast } from '@/components/ui/use-toast';
-import { UserProfile } from './use-auth'; // Importar o tipo de perfil de utilizador
 
-// Este hook irá gerir os dados e as ações da página de configurações.
+// Define a interface para um membro da equipa para segurança de tipos
+interface TeamMember {
+  uid: string;
+  [key: string]: any; // Permite outras propriedades
+}
+
 export const useConfiguracoes = () => {
+  const [equipe, setEquipe] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const { userProfile } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Busca todos os utilizadores que pertencem ao mesmo gabinete.
-  const { data: equipe = [], isLoading, isError } = useQuery<UserProfile[]>({
-    queryKey: ['equipe', userProfile?.gabineteId],
-    queryFn: async () => {
-      if (!userProfile?.gabineteId) return [];
+  useEffect(() => {
+    // Se não houver um gabineteId, não há o que buscar.
+    if (!userProfile?.gabineteId) {
+      setIsLoading(false);
+      return;
+    }
 
-      // NOTA: Esta query requer a criação de um índice composto no Firestore.
-      // O Firebase irá fornecer um link para o criar automaticamente no erro da consola.
-      const usersCollection = collection(db, 'users');
-      const q = query(usersCollection, where("gabineteId", "==", userProfile.gabineteId));
+    // Cria a consulta para buscar todos os utilizadores do mesmo gabinete.
+    const q = query(collection(db, "users"), where("gabineteId", "==", userProfile.gabineteId));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      // CORREÇÃO: Mapeia os documentos e adiciona o ID de cada um como a propriedade 'uid'.
+      // Esta é a correção principal que resolve o erro.
+      const teamData = snapshot.docs.map(doc => ({
+        uid: doc.id,
+        ...doc.data()
+      } as TeamMember));
       
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => doc.data() as UserProfile);
-    },
-    enabled: !!userProfile?.gabineteId,
-  });
-  
-  // AINDA NÃO IMPLEMENTADO: A mutação para convidar um novo utilizador
-  // seria adicionada aqui e chamaria a nossa Cloud Function.
-  // Por agora, vamos focar-nos na UI.
+      setEquipe(teamData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Erro ao buscar equipa:", error);
+      setIsError(true);
+      setIsLoading(false);
+    });
 
-  return {
-    equipe,
-    isLoading,
-    isError,
-    gabineteId: userProfile?.gabineteId
-  };
+    // Limpa o listener quando o componente é desmontado
+    return () => unsubscribe();
+  }, [userProfile]);
+
+  return { equipe, isLoading, isError };
 };

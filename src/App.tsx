@@ -74,19 +74,18 @@ const AppContent = () => {
   if (userProfile?.role === 'superadmin') {
     return (
       <div className="min-h-screen flex flex-col w-full bg-gray-100">
-        <header className="h-16 flex items-center justify-between border-b bg-white px-6 shadow-sm">
+        <header className="h-16 flex items-center justify-between border-b bg-white px-4 sm:px-6 shadow-sm">
           <div>
-            <h1 className="text-xl font-bold text-red-700">Painel do Super Administrador</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-red-700">Painel do Super Administrador</h1>
           </div>
           <Button variant="ghost" onClick={logOut} className="text-slate-600 hover:bg-red-50 hover:text-red-600">
             <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>
         </header>
-        <main className="flex-1 p-6">
-          <div className="container mx-auto max-w-7xl">
-            <SuperAdminDashboard />
-          </div>
+        {/* CORREÇÃO: Removido o 'container' para que o conteúdo ocupe toda a largura */}
+        <main className="flex-1 p-2 sm:p-6">
+          <SuperAdminDashboard />
         </main>
       </div>
     );
@@ -101,10 +100,9 @@ const AppContent = () => {
           <div className="flex-1 flex flex-col">
             <header className="h-12 flex items-center border-b bg-white px-4">
               <SidebarTrigger className="mr-4" />
-              {/* Componente de cabeçalho com a mensagem personalizada */}
               <AppHeader />
             </header>
-            <main className="flex-1 p-6">
+            <main className="flex-1 p-2 sm:p-6">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/contatos" element={<Contatos />} />

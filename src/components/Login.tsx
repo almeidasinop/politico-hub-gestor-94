@@ -42,20 +42,13 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-political-blue to-political-navy p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center text-political-navy">
-            Sistema de Gestão de Gabinete
-          </CardTitle>
-          <CardDescription className="text-center">
-            Acesse seu gabinete ou registre um novo
-          </CardDescription>
+        <CardHeader className="text-center">
+          <img src="/logo.png" alt="Logo do Sistema" className="h-16 w-16 mx-auto mb-4 rounded-lg" />
+          <CardTitle className="text-2xl text-political-navy">Sistema de Gestão de Gabinete</CardTitle>
+          <CardDescription>Acesse o seu gabinete com as suas credenciais</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="register">Registrar</TabsTrigger>
-            </TabsList>
 
             {/* Aba de Login */}
             <TabsContent value="login">
@@ -70,31 +63,6 @@ const Login = () => {
                 </div>
                 <Button type="submit" className="w-full bg-political-blue hover:bg-political-navy" disabled={isAuthenticating}>
                   {isAuthenticating ? 'A entrar...' : 'Entrar'}
-                </Button>
-              </form>
-            </TabsContent>
-
-            {/* Aba de Registo */}
-            <TabsContent value="register">
-              <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="register-gabinete">Nome do Gabinete</Label>
-                  <Input id="register-gabinete" type="text" placeholder="Ex: Gabinete Vereador João" value={registerGabinete} onChange={(e) => setRegisterGabinete(e.target.value)} required />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="register-name">Seu Nome Completo</Label>
-                  <Input id="register-name" type="text" placeholder="Seu nome" value={registerName} onChange={(e) => setRegisterName(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">Seu Email</Label>
-                  <Input id="register-email" type="email" placeholder="seu.melhor@email.com" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-password">Crie uma Senha</Label>
-                  <Input id="register-password" type="password" placeholder="Mínimo 6 caracteres" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} required />
-                </div>
-                <Button type="submit" className="w-full bg-political-blue hover:bg-political-navy" disabled={isAuthenticating}>
-                   {isAuthenticating ? 'A registar...' : 'Registrar Novo Gabinete'}
                 </Button>
               </form>
             </TabsContent>

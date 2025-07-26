@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db, auth } from '@/lib/firebase'; // Importar auth
 import { initializeApp, deleteApp } from 'firebase/app'; // Importar funções de app
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'; // Importar função de criação de usuário
-import { collection, onSnapshot, addDoc, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, doc, updateDoc, serverTimestamp, setDoc, getCountFromServer } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Users, BarChart2, Loader2, PlusCircle, Edit, UserCog, UserPlus, Filter } from 'lucide-react';
+import { Building, Users, BarChart2, Loader2, PlusCircle, Edit, UserCog, UserPlus, Filter, FileText, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // --- Componente para Gerenciar Gabinetes ---
 const GerenciarGabinetes = ({ gabinetes, isLoading }) => {
@@ -53,7 +54,7 @@ const GerenciarGabinetes = ({ gabinetes, isLoading }) => {
         <CardTitle>Gerenciar Gabinetes</CardTitle>
         <CardDescription>Adicione e administre os gabinetes da plataforma.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4 md:p-6">
         <form onSubmit={handleAddGabinete} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6 p-4 border rounded-lg">
           <div className="col-span-1 md:col-span-2">
             <Label htmlFor="nome-gabinete">Nome do Gabinete</Label>
@@ -70,28 +71,30 @@ const GerenciarGabinetes = ({ gabinetes, isLoading }) => {
                 <Label>{novoGabinete.ativo ? "Ativo" : "Inativo"}</Label>
              </div>
           </div>
-          <Button type="submit" className="md:col-start-4" disabled={isSubmitting}>
+          <Button type="submit" className="w-full md:w-auto md:col-start-4" disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
             Adicionar Gabinete
           </Button>
         </form>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={4}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
-            ) : (
-              gabinetes.map(gabinete => <GabineteRow key={gabinete.id} gabinete={gabinete} />)
-            )}
-          </TableBody>
-        </Table>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Vencimento</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={4}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+              ) : (
+                gabinetes.map(gabinete => <GabineteRow key={gabinete.id} gabinete={gabinete} />)
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -126,13 +129,13 @@ const GabineteRow = ({ gabinete }) => {
   return (
     <>
       <TableRow>
-        <TableCell className="font-medium">{gabinete.nome}</TableCell>
+        <TableCell className="font-medium whitespace-nowrap">{gabinete.nome}</TableCell>
         <TableCell>
           <Badge variant={gabinete.ativo && !isVencido ? "default" : "destructive"} className={gabinete.ativo && !isVencido ? 'bg-green-500' : ''}>
             {gabinete.ativo && !isVencido ? "Ativo" : isVencido ? "Vencido" : "Inativo"}
           </Badge>
         </TableCell>
-        <TableCell>{gabinete.vencimento ? gabinete.vencimento.toDate().toLocaleDateString('pt-BR') : 'N/A'}</TableCell>
+        <TableCell className="whitespace-nowrap">{gabinete.vencimento ? gabinete.vencimento.toDate().toLocaleDateString('pt-BR') : 'N/A'}</TableCell>
         <TableCell className="text-right">
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -189,8 +192,8 @@ const GerenciarUsuarios = ({ usuarios, gabinetes, isLoading }) => {
           <CardTitle>Gerenciar Usuários</CardTitle>
           <CardDescription>Visualize e administre todos os usuários do sistema.</CardDescription>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="w-full md:w-64">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <div className="w-full sm:w-64">
                 <Select value={filtroGabinete} onValueChange={setFiltroGabinete}>
                     <SelectTrigger><Filter className="mr-2 h-4 w-4" /><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -203,25 +206,27 @@ const GerenciarUsuarios = ({ usuarios, gabinetes, isLoading }) => {
             <CreateUserDialog gabinetes={gabinetes} />
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Função</TableHead>
-              <TableHead>Gabinete</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
-            ) : (
-              usuariosFiltrados.map(user => <UsuarioRow key={user.id} user={user} gabinetes={gabinetes} />)
-            )}
-          </TableBody>
-        </Table>
+      <CardContent className="p-3 sm:p-4 md:p-6">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead>Gabinete</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+              ) : (
+                usuariosFiltrados.map(user => <UsuarioRow key={user.id} user={user} gabinetes={gabinetes} />)
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -242,17 +247,14 @@ const CreateUserDialog = ({ gabinetes }) => {
     }
     setIsSubmitting(true);
 
-    // CORREÇÃO: Cria uma instância temporária do Firebase para não deslogar o admin
     const tempAppName = `temp-user-creation-${Date.now()}`;
     const tempApp = initializeApp(auth.app.options, tempAppName);
     const tempAuth = getAuth(tempApp);
 
     try {
-      // 1. Cria o usuário no Firebase Auth usando a instância temporária
       const userCredential = await createUserWithEmailAndPassword(tempAuth, formData.email, formData.senha);
       const user = userCredential.user;
 
-      // 2. Cria o documento do usuário no Firestore
       await setDoc(doc(db, "users", user.uid), {
         name: formData.nome,
         email: formData.email,
@@ -272,7 +274,6 @@ const CreateUserDialog = ({ gabinetes }) => {
       toast({ title: "Erro", description, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
-      // Limpa a instância temporária
       await deleteApp(tempApp);
     }
   };
@@ -280,7 +281,7 @@ const CreateUserDialog = ({ gabinetes }) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button><UserPlus className="mr-2 h-4 w-4" /> Adicionar Usuário</Button>
+        <Button className="w-full sm:w-auto"><UserPlus className="mr-2 h-4 w-4" /> Adicionar Usuário</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -371,10 +372,10 @@ const UsuarioRow = ({ user, gabinetes }) => {
   return (
     <>
       <TableRow>
-        <TableCell className="font-medium">{user?.name || 'Sem nome'}</TableCell>
-        <TableCell>{user?.email || 'Sem email'}</TableCell>
+        <TableCell className="font-medium whitespace-nowrap">{user?.name || 'Sem nome'}</TableCell>
+        <TableCell className="whitespace-nowrap">{user?.email || 'Sem email'}</TableCell>
         <TableCell>{user?.role || 'Sem função'}</TableCell>
-        <TableCell>{gabineteName}</TableCell>
+        <TableCell className="whitespace-nowrap">{gabineteName}</TableCell>
         <TableCell className="text-right">
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -414,34 +415,96 @@ const UsuarioRow = ({ user, gabinetes }) => {
 
 
 // --- Componente de Relatórios ---
-const RelatoriosSistema = ({ gabinetes, usuarios, isLoading }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Relatórios do Sistema</CardTitle>
-      <CardDescription>Métricas de uso e relatórios gerais da plataforma.</CardDescription>
-    </CardHeader>
-    <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total de Gabinetes</CardTitle>
-          <Building className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{gabinetes.length}</div>}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {isLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{usuarios.length}</div>}
-        </CardContent>
-      </Card>
-    </CardContent>
-  </Card>
+const RelatoriosSistema = ({ gabinetes, usuarios, isLoading }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Relatórios por Gabinete</CardTitle>
+        <CardDescription>Clique em um gabinete para ver suas estatísticas detalhadas.</CardDescription>
+      </CardHeader>
+      <CardContent className="p-3 sm:p-4 md:p-6">
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : (
+          <Accordion type="single" collapsible className="w-full">
+            {gabinetes.map(gabinete => (
+              <AccordionItem value={gabinete.id} key={gabinete.id}>
+                <AccordionTrigger>{gabinete.nome}</AccordionTrigger>
+                <AccordionContent>
+                  <GabineteStats gabineteId={gabinete.id} usuarios={usuarios} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// --- Componente para buscar e exibir estatísticas de um gabinete ---
+const GabineteStats = ({ gabineteId, usuarios }) => {
+  const [stats, setStats] = useState({ contatos: 0, visitas: 0, materias: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setIsLoading(true);
+      try {
+        const contatosColl = collection(db, `gabinetes/${gabineteId}/contatos`);
+        const visitasColl = collection(db, `gabinetes/${gabineteId}/visitas`);
+        const materiasColl = collection(db, `gabinetes/${gabineteId}/materias`);
+
+        const [contatosSnap, visitasSnap, materiasSnap] = await Promise.all([
+          getCountFromServer(contatosColl),
+          getCountFromServer(visitasColl),
+          getCountFromServer(materiasColl),
+        ]);
+
+        setStats({
+          contatos: contatosSnap.data().count,
+          visitas: visitasSnap.data().count,
+          materias: materiasSnap.data().count,
+        });
+      } catch (error) {
+        console.error("Erro ao buscar estatísticas do gabinete:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [gabineteId]);
+
+  const usuariosDoGabinete = useMemo(() => {
+    return usuarios.filter(u => u.gabineteId === gabineteId).length;
+  }, [usuarios, gabineteId]);
+
+  if (isLoading) {
+    return <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4"><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div>;
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+      <StatCard icon={Users} title="Usuários" value={usuariosDoGabinete} />
+      <StatCard icon={Users} title="Contatos" value={stats.contatos} />
+      <StatCard icon={MapPin} title="Visitas" value={stats.visitas} />
+      <StatCard icon={FileText} title="Matérias" value={stats.materias} />
+    </div>
+  );
+};
+
+const StatCard = ({ icon: Icon, title, value }) => (
+  <div className="flex flex-col items-center justify-center p-4 bg-background rounded-lg border">
+    <Icon className="h-6 w-6 text-muted-foreground mb-2" />
+    <p className="text-2xl font-bold">{value}</p>
+    <p className="text-sm text-muted-foreground">{title}</p>
+  </div>
 );
+
 
 // --- Componente Principal do Dashboard ---
 const SuperAdminDashboard = () => {
@@ -470,11 +533,13 @@ const SuperAdminDashboard = () => {
 
   return (
     <Tabs defaultValue="gabinetes" className="w-full">
-      <TabsList className="flex w-full mb-4">
-        <TabsTrigger value="gabinetes" className="flex-1"><Building className="mr-2 h-4 w-4"/>Gabinetes</TabsTrigger>
-        <TabsTrigger value="usuarios" className="flex-1"><Users className="mr-2 h-4 w-4"/>Usuários</TabsTrigger>
-        <TabsTrigger value="relatorios" className="flex-1"><BarChart2 className="mr-2 h-4 w-4"/>Relatórios</TabsTrigger>
-      </TabsList>
+      <div className="w-full overflow-x-auto pb-2">
+        <TabsList className="inline-flex w-full min-w-max mb-4">
+          <TabsTrigger value="gabinetes" className="flex-1"><Building className="mr-2 h-4 w-4"/>Gabinetes</TabsTrigger>
+          <TabsTrigger value="usuarios" className="flex-1"><Users className="mr-2 h-4 w-4"/>Usuários</TabsTrigger>
+          <TabsTrigger value="relatorios" className="flex-1"><BarChart2 className="mr-2 h-4 w-4"/>Relatórios</TabsTrigger>
+        </TabsList>
+      </div>
       <TabsContent value="gabinetes">
         <GerenciarGabinetes gabinetes={gabinetes} isLoading={isLoading} />
       </TabsContent>
